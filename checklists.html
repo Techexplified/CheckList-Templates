@@ -1130,6 +1130,14 @@ body::-webkit-scrollbar {
 }
 
 /* Remove the unwanted blank box/space */
+
+/* FIX: remove grey background and artificial bottom space */
+html,
+body {
+  background: #fff !important;
+  padding: 0 !important;
+}
+
 .content::before,
 .content::after {
   content: none !important;
@@ -1138,9 +1146,10 @@ body::-webkit-scrollbar {
 }
 
 .content {
-  padding-bottom: 24px !important;
   background: #fff !important;
+  padding-bottom: 24px !important;
 }
+
 
 </style>
 </head>
