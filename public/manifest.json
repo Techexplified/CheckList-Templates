@@ -2,7 +2,7 @@
   "name": "Reusable Checklist Library",
   "details": "Reusable Checklist Library Power-Up for Trello - Analytics, tracking, and board intelligence.",
   "icon": {
-    "url": "./icons/icon.svg"
+    "url": "https://check-list-templates.vercel.app/icons/icon.png"
   },
   "author": "Reusable Checklist Library Team",
   "capabilities": [
