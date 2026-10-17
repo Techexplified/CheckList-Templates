@@ -1613,8 +1613,7 @@ function openMenu(event,id){
 
   menu.innerHTML = `
 
-    <button onclick="addFromMenu('${id}')">
-      ＋ &nbsp; Add to Card
+<button onclick="addFromMenu('${id}', event)">      ＋ &nbsp; Add to Card
     </button>
 
     <button onclick="previewFromMenu('${id}')">
@@ -1664,15 +1663,12 @@ function openMenu(event,id){
   );
 }
 
-function addFromMenu(id){
 
-  closeMenu();
-
-  selected =
-    getTemplate(id);
-
-  addToCard();
+function addFromMenu(id, event) {
+  selected = getTemplate(id);
+  addToCard(event);
 }
+
 
 function previewFromMenu(id){
 
@@ -2125,7 +2121,7 @@ function created(){
 
         <button
           class="primary"
-          onclick="addToCard()"
+          onclick="addToCard(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card()"
         >
           Add to Card
         </button>
@@ -2414,7 +2410,7 @@ function preview(){
 
         <button
           class="primary"
-          onclick="addToCard()"
+          onclick="addToCard(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card(event)"Card()"
           ${items.length ? "" : "disabled"}
         >
           ＋ Add to Card
@@ -2683,16 +2679,14 @@ async function trelloRequest(
   return response.json();
 }
 
-async function addToCard(){
-
+async function addToCard(event) {
   if(!selected){
     return;
   }
 
   try{
 
-    screen = "added";
-    render();
+    
 
     const trello =
       await getTrelloContext();
@@ -2775,63 +2769,50 @@ async function addToCard(){
       "Checklist added to Trello card."
     );
 
-  }catch(error){
+  }
+ catch (error) {
+  console.error(
+    "[Checklist Library] Add to Card error:",
+    error
+  );
 
-    console.error(
-      "[Checklist Library] Add to Card error:",
-      error
-    );
+  if (
+    error?.message === "NOT_AUTHORIZED" ||
+    error?.code === "NOT_AUTHORIZED"
+  ) {
+    try {
+      const trello = await getTrelloContext();
 
+      await trello.popup({
+        title: "Connect Trello Account",
+        url: "./auth.html",
+        height: 320,
+        mouseEvent: event
+      });
+    } catch (popupError) {
+      console.error(
+        "[Checklist Library] Authorization popup error:",
+        popupError
+      );
+
+      toast(
+        "Could not open authorization. Please try again.",
+        true
+      );
+    }
+  } else {
     screen = "preview";
     render();
 
-    if(
-      error?.message ===
-      "NOT_AUTHORIZED" ||
-      error?.code ===
-      "NOT_AUTHORIZED"
-    ){
-
-      toast(
-        "Please connect the Power-Up to Trello first.",
-        true
-      );
-
-      try{
-
-        const trello =
-          await getTrelloContext();
-
-        await trello.popup({
-          title:
-            "Connect Trello Account",
-          url:
-            "./auth.html",
-          height:
-            320
-        });
-
-      }catch(e){
-
-        console.error(
-          "Authorization popup error:",
-          e
-        );
-
-      }
-
-    }else{
-
-      toast(
-        error?.message ||
+    toast(
+      error?.message ||
         "Failed to add checklist to Trello card.",
-        true
-      );
-
-    }
-
+      true
+    );
   }
 }
+
+
 
 function added(){
 
