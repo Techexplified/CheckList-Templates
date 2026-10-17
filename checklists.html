@@ -2679,196 +2679,145 @@ async function trelloRequest(
   return response.json();
 }
 
+
 async function addToCard(event) {
-  if(!selected){
+  if (!selected) {
     return;
   }
 
-  try{
+  try {
+    const trello = await getTrelloContext();
+    const card = await trello.card("id");
 
-    
-
-    const trello =
-      await getTrelloContext();
-
-    const card =
-      await trello.card("id");
-
-    if(!card?.id){
-
+    if (!card?.id) {
       throw new Error(
         "Could not find the current Trello card."
       );
     }
 
-    const restApi =
-      await trello.getRestApi();
+    const restApi = await trello.getRestApi();
+    const authorized = await restApi.isAuthorized();
 
-    const authorized =
-      await restApi.isAuthorized();
-
-    if(!authorized){
-
-      const error =
-        new Error(
-          "NOT_AUTHORIZED"
-        );
-
-      error.code =
-        "NOT_AUTHORIZED";
-
+    if (!authorized) {
+      const error = new Error("NOT_AUTHORIZED");
+      error.code = "NOT_AUTHORIZED";
       throw error;
     }
 
-    /*
-      Create the checklist.
-    */
+    const checklist = await trelloRequest(
+      "POST",
+      `/cards/${card.id}/checklists`,
+      { name: selected.name }
+    );
 
-    const checklist =
-      await trelloRequest(
-        "POST",
-        `/cards/${card.id}/checklists`,
-        {
-          name:selected.name
-        }
+    if (!checklist?.id) {
+      throw new Error(
+        "Trello did not return a checklist ID."
       );
+    }
 
-    /*
-      Create each checklist item.
-    */
+    const items =
+      selected.__previewItems || selected.items || [];
 
-    for(
-  const item
-  of (selected.__previewItems || selected.items)
-){
-
+    for (const item of items) {
       const itemName =
         typeof item === "string"
           ? item.trim()
-          : String(
-              item?.name || ""
-            ).trim();
+          : String(item?.name || "").trim();
 
-      if(!itemName){
+      if (!itemName) {
         continue;
       }
 
       await trelloRequest(
         "POST",
         `/checklists/${checklist.id}/checkItems`,
-        {
-          name:itemName
-        }
+        { name: itemName }
       );
     }
 
     screen = "added";
     render();
 
-    toast(
-      "Checklist added to Trello card."
+    toast("Checklist added to Trello card.");
+  } catch (error) {
+    console.error(
+      "[Checklist Library] Add to Card error:",
+      error
     );
 
-  }
- catch (error) {
-  console.error(
-    "[Checklist Library] Add to Card error:",
-    error
-  );
+    if (
+      error?.message === "NOT_AUTHORIZED" ||
+      error?.code === "NOT_AUTHORIZED"
+    ) {
+      try {
+        const trello = await getTrelloContext();
 
-  if (
-    error?.message === "NOT_AUTHORIZED" ||
-    error?.code === "NOT_AUTHORIZED"
-  ) {
-    try {
-      const trello = await getTrelloContext();
+        await trello.popup({
+          title: "Connect Trello Account",
+          url: "./auth.html",
+          height: 320,
+          mouseEvent: event
+        });
+      } catch (popupError) {
+        console.error(
+          "[Checklist Library] Authorization popup error:",
+          popupError
+        );
 
-      await trello.popup({
-        title: "Connect Trello Account",
-        url: "./auth.html",
-        height: 320,
-        mouseEvent: event
-      });
-    } catch (popupError) {
-      console.error(
-        "[Checklist Library] Authorization popup error:",
-        popupError
-      );
+        screen = "preview";
+        render();
+
+        toast(
+          "Could not open authorization. Please try again.",
+          true
+        );
+      }
+    } else {
+      screen = "preview";
+      render();
 
       toast(
-        "Could not open authorization. Please try again.",
+        error?.message ||
+          "Failed to add checklist to Trello card.",
         true
       );
     }
-  } else {
-    screen = "preview";
-    render();
-
-    toast(
-      error?.message ||
-        "Failed to add checklist to Trello card.",
-      true
-    );
   }
 }
 
-
-
-function added(){
-
+function added() {
   app.innerHTML = `
-
     <div class="success">
-
-      <div class="check">
-        ✓
-      </div>
-
-      <h2>
-        Checklist Added
-      </h2>
-
+      <div class="check">✓</div>
+      <h2>Checklist Added</h2>
       <p>
-        ${esc(
-          selected?.name ||
-          "Checklist"
-        )}
+        ${esc(selected?.name || "Checklist")}
         has been added to this Trello card.
       </p>
-
       <div class="success-actions">
-
         <button
           class="primary"
           onclick="screen='list';render()"
         >
           Done
         </button>
-
       </div>
-
     </div>
-
   `;
 }
-
 render();
 
 </script>
 
 <script type="module">
-
 import {
   APP_KEY,
   APP_NAME
 } from "/src/lib/auth.js";
 
-window.RCL_APP_KEY =
-  APP_KEY;
-
-window.RCL_APP_NAME =
-  APP_NAME;
-
+window.RCL_APP_KEY = APP_KEY;
+window.RCL_APP_NAME = APP_NAME;
 </script>
 
 </body>
