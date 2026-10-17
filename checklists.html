@@ -2557,17 +2557,19 @@ function setupPreviewDragDrop(){
   Trello REST integration
 */
 
-async function getTrelloContext(){
+function getTrelloContext() {
+  if (!window.TrelloPowerUp) {
+    throw new Error("Trello Power-Up SDK is not loaded.");
+  }
 
-  const trello =
-    window.TrelloPowerUp.iframe({
-      appKey:
-        window.RCL_APP_KEY,
-      appName:
-        window.RCL_APP_NAME
-    });
+  if (!window.RCL_APP_KEY || !window.RCL_APP_NAME) {
+    throw new Error("Trello Power-Up configuration is missing.");
+  }
 
-  return trello;
+  return window.TrelloPowerUp.iframe({
+    appKey: window.RCL_APP_KEY,
+    appName: window.RCL_APP_NAME
+  });
 }
 
 async function trelloRequest(
